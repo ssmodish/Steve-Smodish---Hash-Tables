@@ -71,7 +71,8 @@ unsigned int hash(char *str, int max)
 BasicHashTable *create_hash_table(int capacity)
 {
   BasicHashTable *ht;
-
+  ht->capacity = capacity;
+  ht->storage = (void *)calloc(capacity, sizeof(Pair *));
   return ht;
 }
 
@@ -84,7 +85,15 @@ BasicHashTable *create_hash_table(int capacity)
  ****/
 void hash_table_insert(BasicHashTable *ht, char *key, char *value)
 {
+  int ht_index = hash(key, ht->capacity);
 
+  if(ht->storage[ht_index] != '\0')
+  {
+    printf("Overwriting data");
+  }
+
+  Pair *pair = create_pair(key, value);
+  ht->storage[ht_index] = pair;
 }
 
 /****
@@ -94,7 +103,12 @@ void hash_table_insert(BasicHashTable *ht, char *key, char *value)
  ****/
 void hash_table_remove(BasicHashTable *ht, char *key)
 {
+  int ht_index = hash(key, ht->capacity);
+  // free storage
+  destroy_pair(ht->storage[ht_index]);
 
+  // free the table
+  free(ht->storage[ht_index]);
 }
 
 /****
@@ -104,6 +118,8 @@ void hash_table_remove(BasicHashTable *ht, char *key)
  ****/
 char *hash_table_retrieve(BasicHashTable *ht, char *key)
 {
+  int ht_index = hash(key, ht->capacity);
+
   return NULL;
 }
 
@@ -114,7 +130,7 @@ char *hash_table_retrieve(BasicHashTable *ht, char *key)
  ****/
 void destroy_hash_table(BasicHashTable *ht)
 {
-
+  free(ht);
 }
 
 
@@ -139,4 +155,5 @@ int main(void)
 
   return 0;
 }
+
 #endif
