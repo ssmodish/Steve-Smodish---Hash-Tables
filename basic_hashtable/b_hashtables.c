@@ -70,9 +70,10 @@ unsigned int hash(char *str, int max)
  ****/
 BasicHashTable *create_hash_table(int capacity)
 {
-  BasicHashTable *ht;
-  ht->capacity = capacity;
+  BasicHashTable *ht = malloc(sizeof(BasicHashTable));
   ht->storage = (void *)calloc(capacity, sizeof(Pair *));
+  ht->capacity = capacity;
+
   return ht;
 }
 
@@ -85,11 +86,13 @@ BasicHashTable *create_hash_table(int capacity)
  ****/
 void hash_table_insert(BasicHashTable *ht, char *key, char *value)
 {
-  int ht_index = hash(key, ht->capacity);
+  unsigned int ht_index = hash(key, ht->capacity);
 
-  if(ht->storage[ht_index] != '\0')
-  {
+  Pair *stored_pair = ht->storage[ht_index];
+
+  if (stored_pair != NULL) {
     printf("Overwriting data");
+    destroy_pair(stored_pair);
   }
 
   Pair *pair = create_pair(key, value);
@@ -103,12 +106,18 @@ void hash_table_insert(BasicHashTable *ht, char *key, char *value)
  ****/
 void hash_table_remove(BasicHashTable *ht, char *key)
 {
-  int ht_index = hash(key, ht->capacity);
-  // free storage
-  destroy_pair(ht->storage[ht_index]);
+  unsigned int ht_index = hash(key, ht->capacity);
 
-  // free the table
-  free(ht->storage[ht_index]);
+  if (ht->storage[ht_index] == NULL ||
+      strcmp(ht->storage[ht_index]->key, key)) {
+    printf("Entry not found.");
+  } else {
+    // free storage
+    destroy_pair(ht->storage[ht_index]);
+
+    // free the table
+    ht->storage[ht_index] = NULL;
+  }
 }
 
 /****
@@ -118,8 +127,12 @@ void hash_table_remove(BasicHashTable *ht, char *key)
  ****/
 char *hash_table_retrieve(BasicHashTable *ht, char *key)
 {
-  int ht_index = hash(key, ht->capacity);
+  unsigned int ht_index = hash(key, ht->capacity);
+  Pair *stored_pair = ht->storage[ht_index];
 
+  if (stored_pair != NULL) {
+    return stored_pair->value;
+  }
   return NULL;
 }
 
@@ -130,6 +143,12 @@ char *hash_table_retrieve(BasicHashTable *ht, char *key)
  ****/
 void destroy_hash_table(BasicHashTable *ht)
 {
+  for (int i = 0; i < ht->capacity; i++) {
+    if (ht->storage[i] != NULL) {
+      destroy_pair(ht->storage[i]);
+    }
+  }
+
   free(ht);
 }
 
