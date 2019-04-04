@@ -91,7 +91,38 @@ HashTable *create_hash_table(int capacity)
  */
 void hash_table_insert(HashTable *ht, char *key, char *value)
 {
+  unsigned int ht_index = hash(key, ht->capacity);
+  // make a pointer node
+  LinkedPair *hl_item = ht->storage[ht_index];
 
+  // make a new node for the new data
+  LinkedPair *new_item = create_pair(key, value);
+
+  // check to see if there are any items in the list
+  if (hl_item != NULL) {
+    // find the end of the list
+    // checking for duplicate keys along the way
+    while (hl_item->next != NULL) {
+      if (hl_item->key == key) {
+        printf("Overwriting values");
+        hl_item->value = value;
+        return;
+      }
+      hl_item = hl_item->next;
+    }
+    // didn't check the last one for a duplicate key
+    if (hl_item->key == key) {
+      printf("Overwriting values");
+      hl_item->value = value;
+      return;
+    }
+    // set next item in the list to our new item
+    hl_item->next = new_item;
+    return;
+  } else {
+    ht->storage[ht_index] = new_item;
+    return;
+  }
 }
 
 /*
