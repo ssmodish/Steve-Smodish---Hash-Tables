@@ -73,7 +73,9 @@ unsigned int hash(char *str, int max)
  */
 HashTable *create_hash_table(int capacity)
 {
-  HashTable *ht;
+  HashTable *ht = malloc(sizeof(HashTable));
+  ht->storage = calloc(capacity, sizeof(LinkedPair *));
+  ht->capacity = capacity;
 
   return ht;
 }
@@ -89,7 +91,31 @@ HashTable *create_hash_table(int capacity)
  */
 void hash_table_insert(HashTable *ht, char *key, char *value)
 {
+  unsigned int ht_index = hash(key, ht->capacity);
+  LinkedPair *new_item = create_pair(key, value);
+  // make a pointer node to keep track of where we are
+  LinkedPair *list_item = ht->storage[ht_index];
 
+  if (ht->storage[ht_index] == NULL) {
+    ht->storage[ht_index] = new_item;
+  } else {
+    // replace the value if the keys match
+    while (list_item->next != NULL) {
+      if (strcmp(list_item->key, new_item->key) == 0) {
+        printf("overwriting value\n");
+        strcpy(list_item->value, new_item->value);
+        return;
+      }
+      list_item = list_item->next;
+    }
+    // check the last item key in the list
+    if (strcmp(list_item->key, new_item->key) == 0) {
+      printf("overwriting value\n");
+      strcpy(list_item->value, new_item->value);
+      return;
+    }
+    list_item->next = new_item;
+  }
 }
 
 /*
@@ -102,7 +128,35 @@ void hash_table_insert(HashTable *ht, char *key, char *value)
  */
 void hash_table_remove(HashTable *ht, char *key)
 {
+  unsigned int ht_index = hash(key, ht->capacity);
+  // make a pointer node
+  LinkedPair *hash_list = ht->storage[ht_index];
 
+  // if there no list at that index
+  if (ht->storage[ht_index] == NULL) {
+    printf("Entry not found.");
+  }
+  // if the first item matches but has a next node
+  if (strcmp(hash_list->key, key) == 0) {
+    LinkedPair *temp = hash_list->next;
+    ht->storage[ht_index] = hash_list->next;
+    // destroy node
+    destroy_pair(temp);
+  }
+  // otherwise we have to search the list
+  while (hash_list->next != NULL) {
+    // since we already checked the first item
+    // we can consider the current item as 'prev item'
+    if (strcmp(hash_list->next->key, key) == 0) {
+      LinkedPair *temp = hash_list->next;
+      hash_list->next = hash_list->next->next;
+      // destroy node
+      destroy_pair(temp);
+      return;
+    } // should have checked every item in the list
+    printf("Entry not found.");
+    hash_list = hash_list->next;
+  }
 }
 
 /*
@@ -115,6 +169,34 @@ void hash_table_remove(HashTable *ht, char *key)
  */
 char *hash_table_retrieve(HashTable *ht, char *key)
 {
+  unsigned int ht_index = hash(key, ht->capacity);
+
+  // make a pointer node
+  LinkedPair *hash_list = ht->storage[ht_index];
+
+  // if there is no list at that index
+  if (hash_list == NULL) {
+    printf("Entry not found.\n");
+    return NULL;
+  }
+
+  while (hash_list->next != NULL) {
+    printf("e\n");
+
+    if (strcmp(hash_list->key, key) == 0) {
+      printf("matched keys\n");
+      return hash_list->value;
+    }
+    printf("f\n");
+
+    hash_list = hash_list->next;
+  } // should have checked every item but the last in the list
+
+  if (strcmp(hash_list->key, key) == 0) {
+    printf("last item matched keys\n");
+    return hash_list->value;
+  } // should have checked every item in the list
+  printf("no matching items\n");
   return NULL;
 }
 
@@ -125,7 +207,22 @@ char *hash_table_retrieve(HashTable *ht, char *key)
  */
 void destroy_hash_table(HashTable *ht)
 {
+  // go through every index of ht
+  for (int i = 0; i < ht->capacity; i++) {
+    LinkedPair *temp = ht->storage[i];
+    // check if index is empty
+    if (ht->storage[i] != NULL) {
+      // remove all items of linked list
+      while (temp->next != NULL) {
+        ht->storage[i] = temp->next;
+        destroy_pair(temp);
+        temp = temp->next;
+      }
+      destroy_pair(ht->storage[i]);
+    }
+  }
 
+  free(ht);
 }
 
 /*
@@ -138,8 +235,37 @@ void destroy_hash_table(HashTable *ht)
  */
 HashTable *hash_table_resize(HashTable *ht)
 {
-  HashTable *new_ht;
+  printf("resizing\n");
 
+  HashTable *new_ht = create_hash_table(ht->capacity * 2);
+
+  // we have to remove every item from the old table
+  // rehash the keys for the new size
+  // and destroy the old table
+  // go through every index of ht
+  printf("a\n");
+
+  for (int i = 0; i < ht->capacity; i++) {
+    // check if index is empty
+    printf("looping through capacity\n");
+    LinkedPair *item = ht->storage[i];
+
+    printf("there is a linked list\n");
+
+    // remove all items of linked list
+    while (item != NULL) {
+      printf("looping through the items\n");
+      LinkedPair *temp = item;
+
+      hash_table_insert(new_ht, strdup(item->key), strdup(item->value));
+      ht->storage[i] = item->next;
+      item = item->next;
+      destroy_pair(temp);
+    }
+    destroy_pair(item);
+  }
+  printf("destroying old table");
+  destroy_hash_table(ht);
   return new_ht;
 }
 
