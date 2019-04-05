@@ -253,7 +253,7 @@ HashTable *hash_table_resize(HashTable *ht)
     printf("there is a linked list\n");
 
     // remove all items of linked list
-    while (item->next != NULL) {
+    while (item != NULL) {
       printf("looping through the items\n");
       LinkedPair *temp = item;
 
@@ -261,9 +261,7 @@ HashTable *hash_table_resize(HashTable *ht)
       ht->storage[i] = item->next;
       item = item->next;
       destroy_pair(temp);
-      }
-    printf("inserting last item into new ht with key %s\n", item->key);
-    hash_table_insert(new_ht, strdup(item->key), strdup(item->value));
+    }
     destroy_pair(item);
   }
   printf("destroying old table");
